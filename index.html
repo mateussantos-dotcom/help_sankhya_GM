@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helpdesk Consultor Sankhya (Light v3.1)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sankhya: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#00A859', // Verde Oficial Sankhya
+                            600: '#008f4c',
+                            700: '#00753e',
+                            900: '#00381e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .kanban-col { min-height: 70vh; }
+        .dragging { opacity: 0.4; transform: scale(0.98); }
+        .drag-over { border-color: #00A859 !important; background-color: rgba(0, 168, 89, 0.08) !important; }
+        .tab-active { border-bottom: 3px solid #00A859; color: #00A859; font-weight: 700; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00A859; }
+    </style>
+</head>
+<body class="min-h-screen pb-20 md:pb-6">
+
+    <!-- Header Topo -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sankhya-500 p-2 rounded-xl text-white font-extrabold text-xl tracking-wider shadow-md shadow-sankhya-500/20">
+                    SNK
+                </div>
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-slate-800 leading-none flex items-center gap-2">
+                        Helpdesk Consultor Mateus Santos
+                        <span class="bg-sankhya-100 text-sankhya-700 text-[10px] px-2 py-0.5 rounded-full font-bold border border-sankhya-500/20">ERP Sankhya</span>
+                    </h1>
+                    <span class="text-xs text-slate-500">Gestão de Demandas</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <button onclick="openConfigModal()" class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg border border-slate-300 transition">
+                    <i data-lucide="sheet" class="w-4 h-4 text-sankhya-600"></i>
+                    <span class="hidden md:inline font-medium">Google Sheets</span>
+                </button>
+                <button onclick="openNewDemandModal()" class="flex items-center space-x-1.5 bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-md shadow-sankhya-500/20 transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>Nova Demanda</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Container Principal -->
+    <main class="max-w-7xl mx-auto px-3 md:px-6 py-4 md:py-6">
+
+        <!-- Abas de Navegação -->
+        <div class="hidden md:flex border-b border-slate-200 mb-6 space-x-8 text-sm">
+            <button onclick="switchTab('kanban')" id="tab-kanban" class="tab-active py-3 px-1 flex items-center space-x-2">
+                <i data-lucide="kanban" class="w-4 h-4"></i>
+                <span>Quadro Kanban</span>
+            </button>
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-slate-500 py-3 px-1 flex items-center space-x-2 hover:text-slate-800">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span>Dashboard & Performance</span>
+            </button>
+            <button onclick="switchTab('docs')" id="tab-docs" class="text-slate-500 py-3 px-1 flex items-center space-x-2 hover:text-slate-800">
+                <i data-lucide="file-code-2" class="w-4 h-4"></i>
+                <span>Documentação & SQLs</span>
+            </button>
+            <button onclick="switchTab('clients')" id="tab-clients" class="text-slate-500 py-3 px-1 flex items-center space-x-2 hover:text-slate-800">
+                <i data-lucide="building-2" class="w-4 h-4"></i>
+                <span>Clientes ERP</span>
+            </button>
+        </div>
+
+        <!-- Banner de Conexão -->
+        <div id="connectionStatusBanner" class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2.5 rounded-xl mb-4 flex justify-between items-center text-xs md:text-sm shadow-sm">
+            <div class="flex items-center space-x-2.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                <span>Modo Offline Ativo. Para sincronizar com sua planilha do Google, clique em <strong>"Google Sheets"</strong>.</span>
+            </div>
+            <button onclick="openConfigModal()" class="underline text-amber-900 hover:text-black font-semibold ml-2">Conectar</button>
+        </div>
+
+        <!-- TAB 1: KANBAN -->
+        <section id="view-kanban" class="tab-content">
+            <!-- Barra de Filtros -->
+            <div class="bg-white p-3 md:p-4 rounded-xl border border-slate-200 mb-5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="renderKanban()" placeholder="Buscar por título, cliente ou SQL..." class="bg-slate-50 text-xs md:text-sm text-slate-800 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-sankhya-500 w-full">
+                </div>
+                <div class="flex items-center space-x-2 text-xs w-full md:w-auto justify-between md:justify-end">
+                    <select id="filterClient" onchange="renderKanban()" class="bg-slate-50 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+                        <option value="ALL">Todos os Clientes</option>
+                    </select>
+                    <select id="filterPriority" onchange="renderKanban()" class="bg-slate-50 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
+                        <option value="ALL">Todas as Prioridades</option>
+                        <option value="Crítica">Crítica</option>
+                        <option value="Alta">Alta</option>
+                        <option value="Média">Média</option>
+                        <option value="Baixa">Baixa</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Colunas Kanban -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3.5 overflow-x-auto pb-4">
+                
+                <!-- Backlog -->
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <span class="font-bold text-xs text-slate-600 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            <span>Backlog</span>
+                        </span>
+                        <span id="cnt-backlog" class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="col-backlog" data-status="Backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                </div>
+
+                <!-- Em Análise -->
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <span class="font-bold text-xs text-amber-700 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            <span>Em Análise</span>
+                        </span>
+                        <span id="cnt-analise" class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="col-analise" data-status="Em Análise" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                </div>
+
+                <!-- Em Dev -->
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <span class="font-bold text-xs text-sankhya-700 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-sankhya-500"></span>
+                            <span>Em Desenvolvimento</span>
+                        </span>
+                        <span id="cnt-dev" class="bg-sankhya-100 text-sankhya-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="col-dev" data-status="Em Desenvolvimento" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                </div>
+
+                <!-- Validação -->
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <span class="font-bold text-xs text-purple-700 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                            <span>Validação</span>
+                        </span>
+                        <span id="cnt-validacao" class="bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="col-validacao" data-status="Validação Cliente" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                </div>
+
+                <!-- Concluído -->
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <span class="font-bold text-xs text-emerald-700 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Concluído</span>
+                        </span>
+                        <span id="cnt-concluido" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div id="col-concluido" data-status="Concluído" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: DASHBOARD -->
+        <section id="view-dashboard" class="tab-content hidden">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Total Demandas</div>
+                    <div id="dash-total" class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">0</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Horas Estimadas</div>
+                    <div id="dash-horas-est" class="text-2xl md:text-3xl font-bold text-sankhya-600 mt-1">0h</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Horas Apontadas</div>
+                    <div id="dash-horas-real" class="text-2xl md:text-3xl font-bold text-emerald-600 mt-1">0h</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[11px] text-slate-500 uppercase font-semibold">Taxa de Conclusão</div>
+                    <div id="dash-taxa" class="text-2xl md:text-3xl font-bold text-purple-600 mt-1">0%</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-sankhya-600"></i>
+                        <span>Status dos Chamados</span>
+                    </h3>
+                    <div class="h-60 flex justify-center">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Horas por Cliente</span>
+                    </h3>
+                    <div class="h-60 flex justify-center">
+                        <canvas id="chartHoras"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: DOCUMENTAÇÃO & SQLs -->
+        <section id="view-docs" class="tab-content hidden">
+            <div class="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center space-x-2">
+                    <i data-lucide="code-2" class="w-5 h-5 text-sankhya-600"></i>
+                    <span>Base de Scripts SQL, Triggers & Documentações</span>
+                </h3>
+                <div id="docsList" class="space-y-3.5"></div>
+            </div>
+        </section>
+
+        <!-- TAB 4: CLIENTES -->
+        <section id="view-clients" class="tab-content hidden">
+            <div class="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                        <i data-lucide="building-2" class="w-5 h-5 text-sankhya-600"></i>
+                        <span>Empresas Atendidas</span>
+                    </h3>
+                    <button onclick="openClientModal()" class="bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">
+                        + Novo Cliente
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs md:text-sm text-left text-slate-600">
+                        <thead class="text-[11px] uppercase bg-slate-100 text-slate-700 border-b border-slate-200">
+                            <tr>
+                                <th class="px-3 py-2.5">ID</th>
+                                <th class="px-3 py-2.5">Empresa</th>
+                                <th class="px-3 py-2.5">Módulo Principal</th>
+                                <th class="px-3 py-2.5">Versão Sankhya</th>
+                                <th class="px-3 py-2.5">SGBD</th>
+                                <th class="px-3 py-2.5 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Navigation Mobile -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 flex justify-around py-2 px-1 text-[10px] shadow-lg">
+        <button onclick="switchTab('kanban')" id="mob-tab-kanban" class="flex flex-col items-center text-sankhya-600 font-bold">
+            <i data-lucide="kanban" class="w-5 h-5 mb-0.5"></i>
+            <span>Kanban</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="mob-tab-dashboard" class="flex flex-col items-center text-slate-500">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 mb-0.5"></i>
+            <span>Metrics</span>
+        </button>
+        <button onclick="switchTab('docs')" id="mob-tab-docs" class="flex flex-col items-center text-slate-500">
+            <i data-lucide="file-code-2" class="w-5 h-5 mb-0.5"></i>
+            <span>SQLs</span>
+        </button>
+        <button onclick="switchTab('clients')" id="mob-tab-clients" class="flex flex-col items-center text-slate-500">
+            <i data-lucide="building-2" class="w-5 h-5 mb-0.5"></i>
+            <span>Clientes</span>
+        </button>
+    </nav>
+
+    <!-- MODAL COMPLETO DE DEMANDA -->
+    <div id="modalDemand" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2" id="modalDemandTitle">
+                    <i data-lucide="file-text" class="w-5 h-5 text-sankhya-600"></i>
+                    <span>Detalhes da Demanda</span>
+                </h3>
+                <button onclick="closeDemandModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form id="formDemand" onsubmit="saveDemand(event)" class="space-y-4">
+                <input type="hidden" id="demandId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Cliente Sankhya *</label>
+                        <select id="demandClient" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sankhya-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Demanda *</label>
+                        <select id="demandType" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sankhya-500">
+                            <option value="Customização SQL">Customização SQL / Procedure</option>
+                            <option value="Dashboard HTML5">Dashboard HTML5</option>
+                            <option value="Levantamento">Levantamento de Processos</option>
+                            <option value="Erro / Ajuste">Erro / Defeito em Tela</option>
+                            <option value="Treinamento">Treinamento de Usuário</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Título do Chamado *</label>
+                    <input type="text" id="demandTitle" required placeholder="Ex: Ajuste de Trigger na TGFITE..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sankhya-500">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Status</label>
+                        <select id="demandStatus" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none">
+                            <option value="Backlog">Backlog</option>
+                            <option value="Em Análise">Em Análise</option>
+                            <option value="Em Desenvolvimento">Em Dev</option>
+                            <option value="Validação Cliente">Validação</option>
+                            <option value="Concluído">Concluído</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Prioridade</label>
+                        <select id="demandPriority" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs text-slate-800 focus:outline-none">
+                            <option value="Baixa">Baixa</option>
+                            <option value="Média" selected>Média</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Crítica">Crítica</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Data Entrega</label>
+                        <input type="date" id="demandDueDate" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs text-slate-800 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Horas Estimadas</label>
+                        <input type="number" step="0.5" id="demandHoursEst" value="0" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Horas Apontadas</label>
+                        <input type="number" step="0.5" id="demandHoursReal" value="0" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800">
+                    </div>
+                </div>
+
+                <!-- Observação Expandida / Levantamento -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Observações & Levantamento Expandido (Descrição Completa)</label>
+                    <textarea id="demandDetails" rows="4" placeholder="Descreva todo o levantamento do processo, regras de negócio, tabelas envolvidas (ex: TGFCAB, TGFITE)..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sankhya-500"></textarea>
+                </div>
+
+                <!-- Script SQL -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Script SQL / Java / Query Sankhya</label>
+                    <textarea id="demandSql" rows="3" placeholder="SELECT * FROM TGFCAB WHERE..." class="w-full bg-slate-900 font-mono text-xs border border-slate-800 rounded-lg px-3 py-2 text-emerald-400 focus:outline-none"></textarea>
+                </div>
+
+                <!-- ANEXOS COM LEITOR CORRIGIDO -->
+                <div class="border-t border-slate-200 pt-3">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <i data-lucide="paperclip" class="w-4 h-4 text-sankhya-600"></i>
+                        <span>Anexos (PDFs, Imagens, Prints de Erro)</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input type="file" id="fileInput" accept="image/*,.pdf" class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sankhya-100 file:text-sankhya-800 hover:file:bg-sankhya-200">
+                        <button type="button" onclick="uploadAttachment()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-700 shrink-0">Subir Arquivo</button>
+                    </div>
+                    <div id="attachmentsContainer" class="flex flex-wrap gap-2 mt-2"></div>
+                </div>
+
+                <!-- COMENTÁRIOS -->
+                <div class="border-t border-slate-200 pt-3">
+                    <label class="block text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                        <i data-lucide="message-square" class="w-4 h-4 text-sankhya-600"></i>
+                        <span>Histórico de Comentários & Atualizações</span>
+                    </label>
+                    
+                    <div id="commentsList" class="space-y-2 max-h-36 overflow-y-auto mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200"></div>
+
+                    <div class="flex gap-2">
+                        <input type="text" id="newCommentInput" placeholder="Escreva um comentário sobre esta demanda..." class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-sankhya-500 flex-1">
+                        <button type="button" onclick="addComment()" class="bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm">Comentar</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-slate-200">
+                    <button type="button" id="btnDeleteDemand" onclick="deleteCurrentDemand()" class="text-rose-600 hover:underline text-xs font-semibold hidden">Excluir Demanda</button>
+                    <div class="flex space-x-2 ml-auto">
+                        <button type="button" onclick="closeDemandModal()" class="px-3.5 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-slate-100">Cancelar</button>
+                        <button type="submit" class="px-4 py-1.5 rounded-lg text-xs bg-sankhya-500 hover:bg-sankhya-600 text-white font-bold shadow-md">Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CLIENTE -->
+    <div id="modalClient" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Cadastrar Cliente ERP</h3>
+                <button onclick="closeClientModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="formClient" onsubmit="saveClient(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Razão Social / Nome Fantasia *</label>
+                    <input type="text" id="clientName" required placeholder="Ex: Grupo Comercial Silva" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Módulo Principal</label>
+                    <input type="text" id="clientModule" placeholder="Ex: Comercial / WMS / Pessoal" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Versão Sankhya</label>
+                        <input type="text" id="clientVersion" placeholder="Ex: 4.19" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">SGBD</label>
+                        <select id="clientDb" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs text-slate-800">
+                            <option value="Oracle">Oracle</option>
+                            <option value="SQL Server">SQL Server</option>
+                            <option value="PostgreSQL">PostgreSQL</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeClientModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-500">Cancelar</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg text-xs bg-sankhya-500 hover:bg-sankhya-600 text-white font-bold">Salvar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GOOGLE SHEETS -->
+    <div id="modalConfig" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-lg p-5 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                    <i data-lucide="sheet" class="w-5 h-5 text-sankhya-600"></i>
+                    <span>Conexão Google Apps Script</span>
+                </h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-600">
+                <p>Insira a URL do seu Web App para sincronizar em tempo real com sua planilha do Google Sheets:</p>
+                <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-sankhya-700 font-mono focus:outline-none">
+                <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeConfigModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-500">Cancelar</button>
+                    <button type="button" onclick="saveConfig()" class="px-4 py-1.5 rounded-lg text-xs bg-sankhya-500 text-white font-bold">Salvar Conexão</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Principal -->
+    <script>
+        let clients = JSON.parse(localStorage.getItem('skh_clients')) || [
+            { id: 'CLI-1', name: 'Distribuidora Silva', module: 'Comercial & WMS', version: '4.19', db: 'Oracle' },
+            { id: 'CLI-2', name: 'Indústria Metalúrgica', module: 'PCD & Produção', version: '4.18', db: 'SQL Server' }
+        ];
+
+        let demands = JSON.parse(localStorage.getItem('skh_demands')) || [
+            {
+                id: 'DEM-101',
+                clientId: 'CLI-1',
+                clientName: 'Distribuidora Silva',
+                type: 'Customização SQL',
+                title: 'Ajuste de Trigger na TGFITE para Validação de Margem',
+                status: 'Em Desenvolvimento',
+                priority: 'Alta',
+                dueDate: '2026-08-20',
+                hoursEst: 6,
+                hoursReal: 2.5,
+                details: 'Bloquear alteração de preços com margem bruta inferior a 12% nas notas de venda.',
+                sql: 'CREATE OR REPLACE TRIGGER TRG_VAL_MARGEM\nBEFORE INSERT OR UPDATE ON TGFITE\nFOR EACH ROW...',
+                comments: [
+                    { date: '12/08/2026 14:30', text: 'Reunião alinhada com o gerente de TI sobre a regra.' }
+                ],
+                attachments: []
+            }
+        ];
+
+        let currentDemandComments = [];
+        let currentDemandAttachments = [];
+        let webAppUrl = localStorage.getItem('skh_webapp_url') || '';
+        let draggedItemId = null;
+        let chartStatusInstance = null;
+        let chartHorasInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateClientSelects();
+            renderKanban();
+            renderClients();
+            renderDocs();
+            updateConnectionBanner();
+        });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.className = 'text-slate-500 py-3 px-1 flex items-center space-x-2 hover:text-slate-800');
+            document.querySelectorAll('[id^="mob-tab-"]').forEach(el => el.className = 'flex flex-col items-center text-slate-500');
+            
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const dtTab = document.getElementById(`tab-${tab}`);
+            if(dtTab) dtTab.className = 'tab-active py-3 px-1 flex items-center space-x-2';
+            
+            const mobTab = document.getElementById(`mob-tab-${tab}`);
+            if(mobTab) mobTab.className = 'flex flex-col items-center text-sankhya-600 font-bold';
+
+            if(tab === 'dashboard') renderDashboard();
+        }
+
+        // DRAG & DROP
+        function handleDragStart(e, id) {
+            draggedItemId = id;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', id);
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const col = e.currentTarget;
+            col.classList.remove('drag-over');
+            const newStatus = col.getAttribute('data-status');
+
+            if(draggedItemId && newStatus) {
+                const item = demands.find(d => d.id === draggedItemId);
+                if(item && item.status !== newStatus) {
+                    item.status = newStatus;
+                    localStorage.setItem('skh_demands', JSON.stringify(demands));
+                    syncWithGoogleSheets(item);
+                    renderKanban();
+                }
+            }
+        }
+
+        // RENDER KANBAN
+        function renderKanban() {
+            const cols = {
+                'Backlog': document.getElementById('col-backlog'),
+                'Em Análise': document.getElementById('col-analise'),
+                'Em Desenvolvimento': document.getElementById('col-dev'),
+                'Validação Cliente': document.getElementById('col-validacao'),
+                'Concluído': document.getElementById('col-concluido')
+            };
+
+            const cnts = {
+                'Backlog': document.getElementById('cnt-backlog'),
+                'Em Análise': document.getElementById('cnt-analise'),
+                'Em Desenvolvimento': document.getElementById('cnt-dev'),
+                'Validação Cliente': document.getElementById('cnt-validacao'),
+                'Concluído': document.getElementById('cnt-concluido')
+            };
+
+            Object.values(cols).forEach(col => col.innerHTML = '');
+            const counts = { 'Backlog': 0, 'Em Análise': 0, 'Em Desenvolvimento': 0, 'Validação Cliente': 0, 'Concluído': 0 };
+
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterClient = document.getElementById('filterClient').value;
+            const filterPriority = document.getElementById('filterPriority').value;
+
+            demands.forEach(item => {
+                if(filterClient !== 'ALL' && item.clientId !== filterClient) return;
+                if(filterPriority !== 'ALL' && item.priority !== filterPriority) return;
+                if(search && !item.title.toLowerCase().includes(search) && !item.clientName.toLowerCase().includes(search) && !(item.sql || '').toLowerCase().includes(search)) return;
+
+                if(counts[item.status] !== undefined) counts[item.status]++;
+                
+                const card = document.createElement('div');
+                card.draggable = true;
+                card.ondragstart = (e) => handleDragStart(e, item.id);
+                card.ondragend = handleDragEnd;
+                card.onclick = () => editDemand(item.id);
+
+                card.className = 'bg-white border border-slate-200/90 p-3 rounded-xl shadow-sm hover:border-sankhya-500 hover:shadow-md transition cursor-grab active:cursor-grabbing group';
+
+                const priorityColors = {
+                    'Baixa': 'bg-slate-100 text-slate-700 border-slate-200',
+                    'Média': 'bg-blue-50 text-blue-700 border-blue-200',
+                    'Alta': 'bg-amber-50 text-amber-800 border-amber-200',
+                    'Crítica': 'bg-rose-50 text-rose-800 border-rose-200'
+                };
+
+                const commsCount = (item.comments || []).length;
+                const attachCount = (item.attachments || []).length;
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1.5">
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${priorityColors[item.priority]}">${item.priority}</span>
+                        <span class="text-[10px] text-slate-500 font-medium">${item.type}</span>
+                    </div>
+                    <h4 class="text-xs font-bold text-slate-800 group-hover:text-sankhya-600 transition leading-tight mb-2">${item.title}</h4>
+                    <div class="text-[10px] text-slate-500 flex items-center space-x-1 mb-2">
+                        <i data-lucide="building" class="w-3 h-3 text-slate-400"></i>
+                        <span class="truncate font-medium">${item.clientName}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-100 pt-2 mt-1">
+                        <div class="flex items-center gap-2">
+                            <span>Horas: <strong class="text-sankhya-600">${item.hoursReal}h</strong>/${item.hoursEst}h</span>
+                            ${commsCount > 0 ? `<span class="flex items-center gap-0.5 text-slate-400"><i data-lucide="message-square" class="w-2.5 h-2.5"></i>${commsCount}</span>` : ''}
+                            ${attachCount > 0 ? `<span class="flex items-center gap-0.5 text-slate-400"><i data-lucide="paperclip" class="w-2.5 h-2.5"></i>${attachCount}</span>` : ''}
+                        </div>
+                        <i data-lucide="grip-vertical" class="w-3 h-3 text-slate-300"></i>
+                    </div>
+                `;
+
+                if(cols[item.status]) cols[item.status].appendChild(card);
+            });
+
+            Object.keys(counts).forEach(key => { if(cnts[key]) cnts[key].innerText = counts[key]; });
+            lucide.createIcons();
+        }
+
+        // GERENCIADOR DE COMENTÁRIOS
+        function renderComments() {
+            const list = document.getElementById('commentsList');
+            list.innerHTML = '';
+            if(currentDemandComments.length === 0) {
+                list.innerHTML = '<div class="text-[11px] text-slate-400 italic">Nenhum comentário registrado.</div>';
+                return;
+            }
+            currentDemandComments.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 text-xs shadow-sm">
+                        <div class="text-[10px] font-bold text-sankhya-700 mb-0.5">${c.date}</div>
+                        <div class="text-slate-700">${c.text}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function addComment() {
+            const input = document.getElementById('newCommentInput');
+            const val = input.value.trim();
+            if(!val) return;
+            const now = new Date().toLocaleString('pt-BR');
+            currentDemandComments.push({ date: now, text: val });
+            input.value = '';
+            renderComments();
+        }
+
+        // UPLOAD E ABERTURA DE ANEXOS (CORRIGIDO VIA BLOB NATIVO)
+        function uploadAttachment() {
+            const fileInput = document.getElementById('fileInput');
+            if(!fileInput.files || fileInput.files.length === 0) {
+                alert("Selecione um arquivo PDF ou Imagem primeiro!");
+                return;
+            }
+            const file = fileInput.files[0];
+            
+            if (file.size > 3 * 1024 * 1024) {
+                alert("Escolha arquivos de até 3MB para garantir a performance do banco local.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentDemandAttachments.push({
+                    name: file.name,
+                    type: file.type,
+                    data: e.target.result
+                });
+                fileInput.value = '';
+                renderAttachments();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderAttachments() {
+            const container = document.getElementById('attachmentsContainer');
+            container.innerHTML = '';
+            
+            if(currentDemandAttachments.length === 0) {
+                container.innerHTML = '<div class="text-[11px] text-slate-400 italic">Nenhum anexo inserido nesta demanda.</div>';
+                return;
+            }
+
+            currentDemandAttachments.forEach((att, idx) => {
+                const isPdf = att.type.includes('pdf') || att.name.toLowerCase().endsWith('.pdf');
+                const icon = isPdf ? 'file-text' : 'image';
+                
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 shadow-sm">
+                        <i data-lucide="${icon}" class="w-4 h-4 text-sankhya-600 shrink-0"></i>
+                        <span class="truncate max-w-[140px] font-medium" title="${att.name}">${att.name}</span>
+                        <button type="button" onclick="openAttachment(${idx})" class="text-sankhya-700 font-bold hover:underline ml-1">Abrir</button>
+                        <button type="button" onclick="removeAttachment(${idx})" class="text-rose-600 font-bold ml-1 hover:text-rose-800">×</button>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function openAttachment(idx) {
+            const att = currentDemandAttachments[idx];
+            if (!att || !att.data) return;
+
+            try {
+                const arr = att.data.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+
+                const blob = new Blob([u8arr], { type: mime });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const win = window.open(blobUrl, '_blank');
+                if(!win) {
+                    alert("Permita pop-ups no seu navegador para visualizar o arquivo.");
+                }
+            } catch (err) {
+                console.error("Erro ao abrir arquivo:", err);
+                alert("Erro ao decodificar arquivo.");
+            }
+        }
+
+        function removeAttachment(idx) {
+            currentDemandAttachments.splice(idx, 1);
+            renderAttachments();
+        }
+
+        // RENDER DASHBOARD
+        function renderDashboard() {
+            const total = demands.length;
+            const hEst = demands.reduce((acc, d) => acc + (parseFloat(d.hoursEst) || 0), 0);
+            const hReal = demands.reduce((acc, d) => acc + (parseFloat(d.hoursReal) || 0), 0);
+            const done = demands.filter(d => d.status === 'Concluído').length;
+            const taxa = total > 0 ? ((done / total) * 100).toFixed(0) : 0;
+
+            document.getElementById('dash-total').innerText = total;
+            document.getElementById('dash-horas-est').innerText = `${hEst}h`;
+            document.getElementById('dash-horas-real').innerText = `${hReal}h`;
+            document.getElementById('dash-taxa').innerText = `${taxa}%`;
+
+            const statusCounts = { 'Backlog': 0, 'Em Análise': 0, 'Em Desenvolvimento': 0, 'Validação Cliente': 0, 'Concluído': 0 };
+            demands.forEach(d => { if(statusCounts[d.status] !== undefined) statusCounts[d.status]++; });
+
+            if(chartStatusInstance) chartStatusInstance.destroy();
+            const ctx1 = document.getElementById('chartStatus').getContext('2d');
+            chartStatusInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#94a3b8', '#f59e0b', '#00A859', '#a855f7', '#10b981']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#334155', font: { size: 10 } } } } }
+            });
+
+            const clientHours = {};
+            demands.forEach(d => { clientHours[d.clientName] = (clientHours[d.clientName] || 0) + (parseFloat(d.hoursReal) || 0); });
+
+            if(chartHorasInstance) chartHorasInstance.destroy();
+            const ctx2 = document.getElementById('chartHoras').getContext('2d');
+            chartHorasInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(clientHours),
+                    datasets: [{ label: 'Horas Apontadas', data: Object.values(clientHours), backgroundColor: '#00A859' }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { ticks: { color: '#64748b' } }, y: { ticks: { color: '#64748b' } } },
+                    plugins: { legend: { labels: { color: '#334155' } } }
+                }
+            });
+        }
+
+        // RENDER DOCS
+        function renderDocs() {
+            const container = document.getElementById('docsList');
+            container.innerHTML = '';
+            const docs = demands.filter(d => (d.sql && d.sql.trim() !== '') || (d.details && d.details.trim() !== ''));
+
+            if(docs.length === 0) {
+                container.innerHTML = '<div class="text-slate-400 text-xs italic">Nenhum script SQL cadastrado ainda.</div>';
+                return;
+            }
+
+            docs.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200 p-3.5 rounded-xl space-y-2';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] font-bold text-sankhya-700">${item.clientName}</span>
+                            <h4 class="text-xs font-bold text-slate-800">${item.title}</h4>
+                        </div>
+                        <span class="text-[10px] bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-medium">${item.type}</span>
+                    </div>
+                    ${item.details ? `<p class="text-xs text-slate-600 bg-white p-2.5 rounded border border-slate-200">${item.details}</p>` : ''}
+                    ${item.sql ? `
+                        <div class="relative group">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono mb-1">
+                                <span>Script / Query Sankhya:</span>
+                                <button onclick="copyToClipboard('${encodeURIComponent(item.sql)}')" class="text-sankhya-700 font-semibold hover:underline flex items-center gap-1">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> Copiar SQL
+                                </button>
+                            </div>
+                            <pre class="bg-slate-900 text-emerald-400 p-3 rounded-lg text-[11px] font-mono overflow-x-auto border border-slate-800">${item.sql}</pre>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function copyToClipboard(encodedText) {
+            const text = decodeURIComponent(encodedText);
+            navigator.clipboard.writeText(text).then(() => alert('SQL copiado para a área de transferência!'));
+        }
+
+        // CLIENTES
+        function renderClients() {
+            const tbody = document.getElementById('clientsTableBody');
+            tbody.innerHTML = '';
+            clients.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="px-3 py-2 text-xs font-mono text-sankhya-700 font-bold">${c.id}</td>
+                    <td class="px-3 py-2 font-bold text-slate-800">${c.name}</td>
+                    <td class="px-3 py-2">${c.module || '-'}</td>
+                    <td class="px-3 py-2">${c.version || '-'}</td>
+                    <td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 font-medium">${c.db}</span></td>
+                    <td class="px-3 py-2 text-right">
+                        <button onclick="deleteClient('${c.id}')" class="text-rose-600 hover:underline text-xs">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateClientSelects() {
+            const demandClient = document.getElementById('demandClient');
+            const filterClient = document.getElementById('filterClient');
+            demandClient.innerHTML = '';
+            filterClient.innerHTML = '<option value="ALL">Todos os Clientes</option>';
+            clients.forEach(c => {
+                demandClient.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                filterClient.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+        }
+
+        // MODAL DEMANDA
+        function openNewDemandModal() {
+            document.getElementById('formDemand').reset();
+            document.getElementById('demandId').value = '';
+            currentDemandComments = [];
+            currentDemandAttachments = [];
+            renderComments();
+            renderAttachments();
+            document.getElementById('btnDeleteDemand').classList.add('hidden');
+            document.getElementById('modalDemandTitle').innerText = 'Nova Demanda';
+            document.getElementById('modalDemand').classList.remove('hidden');
+        }
+
+        function closeDemandModal() { document.getElementById('modalDemand').classList.add('hidden'); }
+
+        function editDemand(id) {
+            const item = demands.find(d => d.id === id);
+            if(!item) return;
+
+            document.getElementById('demandId').value = item.id;
+            document.getElementById('demandClient').value = item.clientId;
+            document.getElementById('demandType').value = item.type;
+            document.getElementById('demandTitle').value = item.title;
+            document.getElementById('demandStatus').value = item.status;
+            document.getElementById('demandPriority').value = item.priority;
+            document.getElementById('demandDueDate').value = item.dueDate || '';
+            document.getElementById('demandHoursEst').value = item.hoursEst || 0;
+            document.getElementById('demandHoursReal').value = item.hoursReal || 0;
+            document.getElementById('demandDetails').value = item.details || '';
+            document.getElementById('demandSql').value = item.sql || '';
+
+            currentDemandComments = item.comments || [];
+            currentDemandAttachments = item.attachments || [];
+            renderComments();
+            renderAttachments();
+
+            document.getElementById('btnDeleteDemand').classList.remove('hidden');
+            document.getElementById('modalDemandTitle').innerText = 'Detalhes da Demanda';
+            document.getElementById('modalDemand').classList.remove('hidden');
+        }
+
+        function saveDemand(e) {
+            e.preventDefault();
+            const id = document.getElementById('demandId').value || 'DEM-' + Date.now();
+            const clientId = document.getElementById('demandClient').value;
+            const client = clients.find(c => c.id === clientId);
+
+            const payload = {
+                id: id,
+                clientId: clientId,
+                clientName: client ? client.name : 'Desconhecido',
+                type: document.getElementById('demandType').value,
+                title: document.getElementById('demandTitle').value,
+                status: document.getElementById('demandStatus').value,
+                priority: document.getElementById('demandPriority').value,
+                dueDate: document.getElementById('demandDueDate').value,
+                hoursEst: parseFloat(document.getElementById('demandHoursEst').value) || 0,
+                hoursReal: parseFloat(document.getElementById('demandHoursReal').value) || 0,
+                details: document.getElementById('demandDetails').value,
+                sql: document.getElementById('demandSql').value,
+                comments: currentDemandComments,
+                attachments: currentDemandAttachments
+            };
+
+            const idx = demands.findIndex(d => d.id === id);
+            if(idx >= 0) demands[idx] = payload;
+            else demands.push(payload);
+
+            localStorage.setItem('skh_demands', JSON.stringify(demands));
+            syncWithGoogleSheets(payload);
+
+            closeDemandModal();
+            renderKanban();
+            renderDocs();
+        }
+
+        function deleteCurrentDemand() {
+            const id = document.getElementById('demandId').value;
+            if(id && confirm('Deseja realmente excluir esta demanda?')) {
+                demands = demands.filter(d => d.id !== id);
+                localStorage.setItem('skh_demands', JSON.stringify(demands));
+                closeDemandModal();
+                renderKanban();
+                renderDocs();
+            }
+        }
+
+        function openClientModal() {
+            document.getElementById('formClient').reset();
+            document.getElementById('modalClient').classList.remove('hidden');
+        }
+        function closeClientModal() { document.getElementById('modalClient').classList.add('hidden'); }
+
+        function saveClient(e) {
+            e.preventDefault();
+            const newClient = {
+                id: 'CLI-' + (clients.length + 1),
+                name: document.getElementById('clientName').value,
+                module: document.getElementById('clientModule').value,
+                version: document.getElementById('clientVersion').value,
+                db: document.getElementById('clientDb').value
+            };
+            clients.push(newClient);
+            localStorage.setItem('skh_clients', JSON.stringify(clients));
+            updateClientSelects();
+            renderClients();
+            closeClientModal();
+        }
+
+        function deleteClient(id) {
+            if(confirm('Excluir este cliente?')) {
+                clients = clients.filter(c => c.id !== id);
+                localStorage.setItem('skh_clients', JSON.stringify(clients));
+                updateClientSelects();
+                renderClients();
+            }
+        }
+
+        function openConfigModal() {
+            document.getElementById('webAppUrl').value = webAppUrl;
+            document.getElementById('modalConfig').classList.remove('hidden');
+        }
+        function closeConfigModal() { document.getElementById('modalConfig').classList.add('hidden'); }
+
+        function saveConfig() {
+            webAppUrl = document.getElementById('webAppUrl').value.trim();
+            localStorage.setItem('skh_webapp_url', webAppUrl);
+            updateConnectionBanner();
+            closeConfigModal();
+        }
+
+        function updateConnectionBanner() {
+            const banner = document.getElementById('connectionStatusBanner');
+            if(webAppUrl) {
+                banner.className = 'bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2.5 rounded-xl mb-4 flex justify-between items-center text-xs md:text-sm shadow-sm';
+                banner.innerHTML = `
+                    <div class="flex items-center space-x-2 text-xs">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>Sincronizado com o Google Sheets!</span>
+                    </div>
+                    <button onclick="openConfigModal()" class="underline text-emerald-900 hover:text-black font-semibold">Alterar URL</button>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function syncWithGoogleSheets(data) {
+            if(!webAppUrl) return;
+            fetch(webAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(() => console.log('Sincronizado com Google Sheets!'))
+            .catch(err => console.error('Erro ao sincronizar:', err));
+        }
+    </script>
+</body>
+</html>
