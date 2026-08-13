@@ -30,7 +30,8 @@
     </script>
     <style>
         body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #0f172a; }
-        .kanban-col { min-height: 70vh; }
+        .kanban-col { min-height: 70vh; transition: all 0.3s ease; }
+        .kanban-col.collapsed { min-height: auto !important; display: none !important; }
         .dragging { opacity: 0.4; transform: scale(0.98); }
         .drag-over { border-color: #00A859 !important; background-color: rgba(0, 168, 89, 0.08) !important; }
         .tab-active { border-bottom: 3px solid #00A859; color: #00A859; font-weight: 700; }
@@ -136,63 +137,78 @@
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3.5 overflow-x-auto pb-4">
                 
                 <!-- Backlog -->
-                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
-                    <div class="flex justify-between items-center mb-3 px-1">
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
+                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-backlog', 'icon-backlog')">
                         <span class="font-bold text-xs text-slate-600 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-slate-400"></span>
                             <span>Backlog</span>
                         </span>
-                        <span id="cnt-backlog" class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="cnt-backlog" class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <i data-lucide="chevron-down" id="icon-backlog" class="w-4 h-4 text-slate-500 transition-transform duration-200"></i>
+                        </div>
                     </div>
-                    <div id="col-backlog" data-status="Backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                    <div id="col-backlog" data-status="Backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Em Análise -->
-                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
-                    <div class="flex justify-between items-center mb-3 px-1">
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
+                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-analise', 'icon-analise')">
                         <span class="font-bold text-xs text-amber-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                             <span>Em Análise</span>
                         </span>
-                        <span id="cnt-analise" class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="cnt-analise" class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <i data-lucide="chevron-down" id="icon-analise" class="w-4 h-4 text-amber-600 transition-transform duration-200"></i>
+                        </div>
                     </div>
-                    <div id="col-analise" data-status="Em Análise" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                    <div id="col-analise" data-status="Em Análise" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Em Dev -->
-                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
-                    <div class="flex justify-between items-center mb-3 px-1">
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
+                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-dev', 'icon-dev')">
                         <span class="font-bold text-xs text-sankhya-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-sankhya-500"></span>
-                            <span>Em Dev</span>
+                            <span>Em Desenvolvimento</span>
                         </span>
-                        <span id="cnt-dev" class="bg-sankhya-100 text-sankhya-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="cnt-dev" class="bg-sankhya-100 text-sankhya-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <i data-lucide="chevron-down" id="icon-dev" class="w-4 h-4 text-sankhya-600 transition-transform duration-200"></i>
+                        </div>
                     </div>
-                    <div id="col-dev" data-status="Em Desenvolvimento" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                    <div id="col-dev" data-status="Em Desenvolvimento" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Validação -->
-                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
-                    <div class="flex justify-between items-center mb-3 px-1">
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
+                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-validacao', 'icon-validacao')">
                         <span class="font-bold text-xs text-purple-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-purple-500"></span>
                             <span>Validação</span>
                         </span>
-                        <span id="cnt-validacao" class="bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="cnt-validacao" class="bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <i data-lucide="chevron-down" id="icon-validacao" class="w-4 h-4 text-purple-600 transition-transform duration-200"></i>
+                        </div>
                     </div>
-                    <div id="col-validacao" data-status="Validação Cliente" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                    <div id="col-validacao" data-status="Validação Cliente" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Concluído -->
-                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px]">
-                    <div class="flex justify-between items-center mb-3 px-1">
+                <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
+                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-concluido', 'icon-concluido')">
                         <span class="font-bold text-xs text-emerald-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <span>Concluído</span>
                         </span>
-                        <span id="cnt-concluido" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                        <div class="flex items-center space-x-1">
+                            <span id="cnt-concluido" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
+                            <i data-lucide="chevron-down" id="icon-concluido" class="w-4 h-4 text-emerald-600 transition-transform duration-200"></i>
+                        </div>
                     </div>
-                    <div id="col-concluido" data-status="Concluído" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition"></div>
+                    <div id="col-concluido" data-status="Concluído" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
             </div>
@@ -518,6 +534,21 @@
             renderDocs();
             updateConnectionBanner();
         });
+
+        // RECOLHER / EXPANDIR COLUNAS DO KANBAN
+        function toggleColumn(columnId, iconId) {
+            const column = document.getElementById(columnId);
+            const icon = document.getElementById(iconId);
+            
+            if (column.classList.contains('collapsed')) {
+                column.classList.remove('collapsed');
+                icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                column.classList.add('collapsed');
+                icon.setAttribute('data-lucide', 'chevron-right');
+            }
+            lucide.createIcons();
+        }
 
         // BUSCA DADOS VIA POST SEGURO (COMPATÍVEL COM SAFARI/IOS E GOOGLE APPS SCRIPT)
         function loadDataFromGoogleSheets() {
