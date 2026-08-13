@@ -43,37 +43,44 @@
 </head>
 <body class="min-h-screen pb-20 md:pb-6">
 
-    <!-- Header Topo -->
+    <!-- Header Topo Reestruturado para Mobile -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-sankhya-500 p-2 rounded-xl text-white font-extrabold text-xl tracking-wider shadow-md shadow-sankhya-500/20">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+            
+            <!-- Perfil e Logo -->
+            <div class="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+                <div class="bg-sankhya-500 p-2 rounded-xl text-white font-extrabold text-lg sm:text-xl tracking-wider shadow-md shadow-sankhya-500/20 shrink-0">
                     SNK
                 </div>
-                <div>
-                    <h1 class="text-base md:text-lg font-bold text-slate-800 leading-none flex items-center gap-2">
-                        Mateus Santos
-                        <span class="bg-sankhya-100 text-sankhya-700 text-[10px] px-2 py-0.5 rounded-full font-bold border border-sankhya-500/20">ERP Sankhya</span>
-                    </h1>
-                    <span class="text-xs text-slate-500">Gestão de Demandas, Anexos & Scripts SQL</span>
+                <div class="truncate">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <h1 class="text-sm sm:text-base font-bold text-slate-800 leading-tight truncate">
+                            Mateus Santos
+                        </h1>
+                        <span class="bg-sankhya-100 text-sankhya-700 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full font-bold border border-sankhya-500/20 shrink-0">
+                            ERP Sankhya
+                        </span>
+                    </div>
+                    <span class="text-[10px] sm:text-xs text-slate-500 block truncate">Gestão de Demandas & SQLs</span>
                 </div>
             </div>
             
-            <div class="flex items-center space-x-2 md:space-x-3">
+            <!-- Botões Superiores -->
+            <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0 ml-auto">
                 <!-- BOTÃO DE SINCRONIZAÇÃO MANUAL -->
-                <button onclick="forceSyncData()" title="Sincronizar dados da Planilha agora" class="flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs px-3 py-2 rounded-lg border border-emerald-300 font-semibold transition">
-                    <i data-lucide="refresh-cw" id="syncIcon" class="w-4 h-4 text-sankhya-600"></i>
-                    <span class="hidden md:inline">Sincronizar</span>
+                <button onclick="forceSyncData()" title="Sincronizar dados da Planilha agora" class="flex items-center space-x-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-emerald-300 font-semibold transition">
+                    <i data-lucide="refresh-cw" id="syncIcon" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sankhya-600"></i>
+                    <span class="hidden sm:inline">Sincronizar</span>
                 </button>
 
-                <button onclick="openConfigModal()" class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg border border-slate-300 transition">
-                    <i data-lucide="sheet" class="w-4 h-4 text-sankhya-600"></i>
-                    <span class="hidden md:inline font-medium">Configuração</span>
+                <button onclick="openConfigModal()" class="flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg border border-slate-300 transition">
+                    <i data-lucide="sheet" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sankhya-600"></i>
+                    <span class="hidden sm:inline font-medium">Configuração</span>
                 </button>
 
-                <button onclick="openNewDemandModal()" class="flex items-center space-x-1.5 bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-md shadow-sankhya-500/20 transition">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Nova Demanda</span>
+                <button onclick="openNewDemandModal()" class="flex items-center space-x-1 bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs font-semibold px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg shadow-md shadow-sankhya-500/20 transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span>Nova <span class="hidden sm:inline">Demanda</span></span>
                 </button>
             </div>
         </div>
@@ -113,13 +120,20 @@
 
         <!-- TAB 1: KANBAN -->
         <section id="view-kanban" class="tab-content">
-            <!-- Barra de Filtros -->
+            <!-- Barra de Filtros + Botão Expandir/Recolher Geral -->
             <div class="bg-white p-3 md:p-4 rounded-xl border border-slate-200 mb-5 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                 <div class="flex items-center space-x-2 flex-1 min-w-[200px]">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                     <input type="text" id="searchInput" oninput="renderKanban()" placeholder="Buscar por título, cliente ou SQL..." class="bg-slate-50 text-xs md:text-sm text-slate-800 placeholder-slate-400 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-sankhya-500 w-full">
                 </div>
-                <div class="flex items-center space-x-2 text-xs w-full md:w-auto justify-between md:justify-end">
+                
+                <div class="flex flex-wrap items-center gap-2 text-xs w-full md:w-auto justify-between md:justify-end">
+                    <!-- BOTÃO PARA EXPANDIR / RECOLHER TODOS -->
+                    <button onclick="toggleAllColumns()" class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 transition shrink-0">
+                        <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-sankhya-600"></i>
+                        <span id="btnToggleAllText">Expandir Todos</span>
+                    </button>
+
                     <select id="filterClient" onchange="renderKanban()" class="bg-slate-50 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none">
                         <option value="ALL">Todos os Clientes</option>
                     </select>
@@ -138,77 +152,77 @@
                 
                 <!-- Backlog -->
                 <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
-                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-backlog', 'icon-backlog')">
+                    <div class="flex justify-between items-center px-1 cursor-pointer select-none" onclick="toggleColumn('col-backlog', 'icon-backlog')">
                         <span class="font-bold text-xs text-slate-600 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-slate-400"></span>
                             <span>Backlog</span>
                         </span>
                         <div class="flex items-center space-x-1">
                             <span id="cnt-backlog" class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
-                            <i data-lucide="chevron-down" id="icon-backlog" class="w-4 h-4 text-slate-500 transition-transform duration-200"></i>
+                            <i data-lucide="chevron-right" id="icon-backlog" class="w-4 h-4 text-slate-500 transition-transform duration-200"></i>
                         </div>
                     </div>
-                    <div id="col-backlog" data-status="Backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
+                    <div id="col-backlog" data-status="Backlog" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col collapsed space-y-2.5 flex-1 p-1 mt-3 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Em Análise -->
                 <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
-                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-analise', 'icon-analise')">
+                    <div class="flex justify-between items-center px-1 cursor-pointer select-none" onclick="toggleColumn('col-analise', 'icon-analise')">
                         <span class="font-bold text-xs text-amber-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                             <span>Em Análise</span>
                         </span>
                         <div class="flex items-center space-x-1">
                             <span id="cnt-analise" class="bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
-                            <i data-lucide="chevron-down" id="icon-analise" class="w-4 h-4 text-amber-600 transition-transform duration-200"></i>
+                            <i data-lucide="chevron-right" id="icon-analise" class="w-4 h-4 text-amber-600 transition-transform duration-200"></i>
                         </div>
                     </div>
-                    <div id="col-analise" data-status="Em Análise" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
+                    <div id="col-analise" data-status="Em Análise" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col collapsed space-y-2.5 flex-1 p-1 mt-3 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Em Dev -->
                 <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
-                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-dev', 'icon-dev')">
+                    <div class="flex justify-between items-center px-1 cursor-pointer select-none" onclick="toggleColumn('col-dev', 'icon-dev')">
                         <span class="font-bold text-xs text-sankhya-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-sankhya-500"></span>
-                            <span>Em Desenvolvimento</span>
+                            <span>Em Dev</span>
                         </span>
                         <div class="flex items-center space-x-1">
                             <span id="cnt-dev" class="bg-sankhya-100 text-sankhya-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
-                            <i data-lucide="chevron-down" id="icon-dev" class="w-4 h-4 text-sankhya-600 transition-transform duration-200"></i>
+                            <i data-lucide="chevron-right" id="icon-dev" class="w-4 h-4 text-sankhya-600 transition-transform duration-200"></i>
                         </div>
                     </div>
-                    <div id="col-dev" data-status="Em Desenvolvimento" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
+                    <div id="col-dev" data-status="Em Desenvolvimento" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col collapsed space-y-2.5 flex-1 p-1 mt-3 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Validação -->
                 <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
-                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-validacao', 'icon-validacao')">
+                    <div class="flex justify-between items-center px-1 cursor-pointer select-none" onclick="toggleColumn('col-validacao', 'icon-validacao')">
                         <span class="font-bold text-xs text-purple-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-purple-500"></span>
                             <span>Validação</span>
                         </span>
                         <div class="flex items-center space-x-1">
                             <span id="cnt-validacao" class="bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
-                            <i data-lucide="chevron-down" id="icon-validacao" class="w-4 h-4 text-purple-600 transition-transform duration-200"></i>
+                            <i data-lucide="chevron-right" id="icon-validacao" class="w-4 h-4 text-purple-600 transition-transform duration-200"></i>
                         </div>
                     </div>
-                    <div id="col-validacao" data-status="Validação Cliente" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
+                    <div id="col-validacao" data-status="Validação Cliente" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col collapsed space-y-2.5 flex-1 p-1 mt-3 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
                 <!-- Concluído -->
                 <div class="bg-slate-100/70 p-3 rounded-xl border border-slate-200/80 flex flex-col min-w-[250px] transition-all duration-300 h-fit">
-                    <div class="flex justify-between items-center mb-3 px-1 cursor-pointer select-none" onclick="toggleColumn('col-concluido', 'icon-concluido')">
+                    <div class="flex justify-between items-center px-1 cursor-pointer select-none" onclick="toggleColumn('col-concluido', 'icon-concluido')">
                         <span class="font-bold text-xs text-emerald-700 uppercase tracking-wider flex items-center space-x-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                             <span>Concluído</span>
                         </span>
                         <div class="flex items-center space-x-1">
                             <span id="cnt-concluido" class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
-                            <i data-lucide="chevron-down" id="icon-concluido" class="w-4 h-4 text-emerald-600 transition-transform duration-200"></i>
+                            <i data-lucide="chevron-right" id="icon-concluido" class="w-4 h-4 text-emerald-600 transition-transform duration-200"></i>
                         </div>
                     </div>
-                    <div id="col-concluido" data-status="Concluído" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col space-y-2.5 flex-1 p-1 rounded-lg border border-dashed border-transparent transition-all"></div>
+                    <div id="col-concluido" data-status="Concluído" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="kanban-col collapsed space-y-2.5 flex-1 p-1 mt-3 rounded-lg border border-dashed border-transparent transition-all"></div>
                 </div>
 
             </div>
@@ -521,6 +535,15 @@
         let draggedItemId = null;
         let chartStatusInstance = null;
         let chartHorasInstance = null;
+        let isAllExpanded = false; // Controla o estado global das colunas
+
+        const COLUMNS_CONFIG = [
+            { colId: 'col-backlog', iconId: 'icon-backlog' },
+            { colId: 'col-analise', iconId: 'icon-analise' },
+            { colId: 'col-dev', iconId: 'icon-dev' },
+            { colId: 'col-validacao', iconId: 'icon-validacao' },
+            { colId: 'col-concluido', iconId: 'icon-concluido' }
+        ];
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
@@ -535,7 +558,7 @@
             updateConnectionBanner();
         });
 
-        // RECOLHER / EXPANDIR COLUNAS DO KANBAN
+        // RECOLHER / EXPANDIR UMA COLUNA ESPECÍFICA
         function toggleColumn(columnId, iconId) {
             const column = document.getElementById(columnId);
             const icon = document.getElementById(iconId);
@@ -547,7 +570,50 @@
                 column.classList.add('collapsed');
                 icon.setAttribute('data-lucide', 'chevron-right');
             }
+            checkAllState();
             lucide.createIcons();
+        }
+
+        // EXPANDIR / RECOLHER TODAS AS COLUNAS
+        function toggleAllColumns() {
+            isAllExpanded = !isAllExpanded;
+            const btnText = document.getElementById('btnToggleAllText');
+
+            COLUMNS_CONFIG.forEach(item => {
+                const column = document.getElementById(item.colId);
+                const icon = document.getElementById(item.iconId);
+                
+                if (isAllExpanded) {
+                    column.classList.remove('collapsed');
+                    icon.setAttribute('data-lucide', 'chevron-down');
+                } else {
+                    column.classList.add('collapsed');
+                    icon.setAttribute('data-lucide', 'chevron-right');
+                }
+            });
+
+            btnText.innerText = isAllExpanded ? 'Recolher Todos' : 'Expandir Todos';
+            lucide.createIcons();
+        }
+
+        // Sincroniza o texto do botão "Expandir/Recolher Todos" com a ação manual do usuário
+        function checkAllState() {
+            const allCollapsed = COLUMNS_CONFIG.every(item => 
+                document.getElementById(item.colId).classList.contains('collapsed')
+            );
+            const btnText = document.getElementById('btnToggleAllText');
+            if (allCollapsed) {
+                isAllExpanded = false;
+                btnText.innerText = 'Expandir Todos';
+            } else {
+                const allExpanded = COLUMNS_CONFIG.every(item => 
+                    !document.getElementById(item.colId).classList.contains('collapsed')
+                );
+                if (allExpanded) {
+                    isAllExpanded = true;
+                    btnText.innerText = 'Recolher Todos';
+                }
+            }
         }
 
         // BUSCA DADOS VIA POST SEGURO (COMPATÍVEL COM SAFARI/IOS E GOOGLE APPS SCRIPT)
