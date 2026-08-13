@@ -59,10 +59,17 @@
             </div>
             
             <div class="flex items-center space-x-2 md:space-x-3">
+                <!-- BOTÃO DE SINCRONIZAÇÃO MANUAL -->
+                <button onclick="forceSyncData()" title="Sincronizar dados da Planilha agora" class="flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs px-3 py-2 rounded-lg border border-emerald-300 font-semibold transition">
+                    <i data-lucide="refresh-cw" id="syncIcon" class="w-4 h-4 text-sankhya-600"></i>
+                    <span class="hidden md:inline">Sincronizar</span>
+                </button>
+
                 <button onclick="openConfigModal()" class="flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-lg border border-slate-300 transition">
                     <i data-lucide="sheet" class="w-4 h-4 text-sankhya-600"></i>
-                    <span class="hidden md:inline font-medium">Google Sheets</span>
+                    <span class="hidden md:inline font-medium">Configuração</span>
                 </button>
+
                 <button onclick="openNewDemandModal()" class="flex items-center space-x-1.5 bg-sankhya-500 hover:bg-sankhya-600 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-md shadow-sankhya-500/20 transition">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     <span>Nova Demanda</span>
@@ -95,12 +102,12 @@
         </div>
 
         <!-- Banner de Conexão -->
-        <div id="connectionStatusBanner" class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2.5 rounded-xl mb-4 flex justify-between items-center text-xs md:text-sm shadow-sm">
+        <div id="connectionStatusBanner" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2.5 rounded-xl mb-4 flex justify-between items-center text-xs md:text-sm shadow-sm">
             <div class="flex items-center space-x-2.5">
-                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0"></i>
-                <span>Modo Offline Ativo. Para sincronizar com sua planilha do Google, clique em <strong>"Google Sheets"</strong>.</span>
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                <span>Conectado ao Google Sheets!</span>
             </div>
-            <button onclick="openConfigModal()" class="underline text-amber-900 hover:text-black font-semibold ml-2">Conectar</button>
+            <button onclick="forceSyncData()" class="underline text-emerald-900 hover:text-black font-semibold ml-2">Atualizar Agora</button>
         </div>
 
         <!-- TAB 1: KANBAN -->
@@ -470,11 +477,11 @@
                 <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="space-y-3 text-xs text-slate-600">
-                <p>Insira a URL do seu Web App para sincronizar em tempo real com sua planilha do Google Sheets:</p>
-                <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-sankhya-700 font-mono focus:outline-none">
+                <p>URL do Web App do Google Apps Script fixada no sistema:</p>
+                <input type="text" id="webAppUrl" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-sankhya-700 font-mono focus:outline-none">
                 <div class="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeConfigModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-500">Cancelar</button>
-                    <button type="button" onclick="saveConfig()" class="px-4 py-1.5 rounded-lg text-xs bg-sankhya-500 text-white font-bold">Salvar Conexão</button>
+                    <button type="button" onclick="saveConfig()" class="px-4 py-1.5 rounded-lg text-xs bg-sankhya-500 text-white font-bold">Salvar Alteração</button>
                 </div>
             </div>
         </div>
@@ -482,35 +489,19 @@
 
     <!-- Script Principal da Aplicação -->
     <script>
+        // URL FIXA DO SEU GOOGLE APPS SCRIPT
+        const DEFAULT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzWmN1gaTmDVt_fcTHUExMA3rlEutrv_o9eutWfNq87zSetKgI-GKuGyxZtaOOYrrys1g/exec";
+
         let clients = JSON.parse(localStorage.getItem('skh_clients')) || [
             { id: 'CLI-1', name: 'Distribuidora Silva', module: 'Comercial & WMS', version: '4.19', db: 'Oracle' },
             { id: 'CLI-2', name: 'Indústria Metalúrgica', module: 'PCD & Produção', version: '4.18', db: 'SQL Server' }
         ];
 
-        let demands = JSON.parse(localStorage.getItem('skh_demands')) || [
-            {
-                id: 'DEM-101',
-                clientId: 'CLI-1',
-                clientName: 'Distribuidora Silva',
-                type: 'Customização SQL',
-                title: 'Ajuste de Trigger na TGFITE para Validação de Margem',
-                status: 'Em Desenvolvimento',
-                priority: 'Alta',
-                dueDate: '2026-08-20',
-                hoursEst: 6,
-                hoursReal: 2.5,
-                details: 'Bloquear alteração de preços com margem bruta inferior a 12% nas notas de venda.',
-                sql: 'CREATE OR REPLACE TRIGGER TRG_VAL_MARGEM\nBEFORE INSERT OR UPDATE ON TGFITE\nFOR EACH ROW...',
-                comments: [
-                    { date: '12/08/2026 14:30', text: 'Reunião alinhada com o gerente de TI sobre a regra.' }
-                ],
-                attachments: []
-            }
-        ];
+        let demands = JSON.parse(localStorage.getItem('skh_demands')) || [];
 
         let currentDemandComments = [];
         let currentDemandAttachments = [];
-        let webAppUrl = localStorage.getItem('skh_webapp_url') || '';
+        let webAppUrl = localStorage.getItem('skh_webapp_url') || DEFAULT_WEB_APP_URL;
         let draggedItemId = null;
         let chartStatusInstance = null;
         let chartHorasInstance = null;
@@ -519,7 +510,7 @@
             lucide.createIcons();
             updateClientSelects();
             
-            // Busca dados da Planilha Google Sheets se houver conexão
+            // Força a busca automática dos dados ao iniciar
             loadDataFromGoogleSheets();
 
             renderKanban();
@@ -528,22 +519,78 @@
             updateConnectionBanner();
         });
 
-        // BUSCA DADOS DA PLANILHA NO CARREGAMENTO
+        // BUSCA DADOS VIA POST SEGURO (COMPATÍVEL COM SAFARI/IOS E GOOGLE APPS SCRIPT)
         function loadDataFromGoogleSheets() {
             if (!webAppUrl) return;
 
-            fetch(webAppUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.demands && data.demands.length > 0) {
-                        demands = data.demands;
-                        localStorage.setItem('skh_demands', JSON.stringify(demands));
-                        renderKanban();
-                        renderDocs();
-                        if (typeof renderDashboard === 'function') renderDashboard();
-                    }
-                })
-                .catch(err => console.error("Aviso: executando modo local/offline.", err));
+            fetch(webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "READ" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.demands && Array.isArray(data.demands)) {
+                    demands = data.demands;
+                    localStorage.setItem('skh_demands', JSON.stringify(demands));
+                    renderKanban();
+                    renderDocs();
+                    if (typeof renderDashboard === 'function') renderDashboard();
+                }
+            })
+            .catch(err => console.log("Executando em modo local ou aguardando conexão:", err));
+        }
+
+        // SINCRONIZAÇÃO MANUAL
+        function forceSyncData() {
+            const icon = document.getElementById('syncIcon');
+            if(icon) icon.classList.add('animate-spin');
+
+            if (!webAppUrl) {
+                alert("URL do Web App não configurada!");
+                if(icon) icon.classList.remove('animate-spin');
+                return;
+            }
+
+            fetch(webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "READ" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.demands) {
+                    demands = data.demands;
+                    localStorage.setItem('skh_demands', JSON.stringify(demands));
+                    renderKanban();
+                    renderDocs();
+                    if (typeof renderDashboard === 'function') renderDashboard();
+                    alert("Dados sincronizados com a planilha do Google!");
+                } else {
+                    alert("Conectado, mas nenhum dado foi retornado da planilha.");
+                }
+            })
+            .catch(err => {
+                console.error("Erro na sincronização:", err);
+                alert("Falha na sincronização. Verifique se o Apps Script foi publicado com 'Nova versão'.");
+            })
+            .finally(() => {
+                if(icon) icon.classList.remove('animate-spin');
+            });
+        }
+
+        // GRAVAÇÃO COMPATÍVEL COM SAFARI/IOS (USA NO-CORS PARA EVITAR ERROS)
+        function syncWithGoogleSheets(data) {
+            if(!webAppUrl) return;
+
+            fetch(webAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(data)
+            })
+            .then(() => console.log('Dado enviado ao Sheets!'))
+            .catch(err => console.error('Erro de envio ao Sheets:', err));
         }
 
         function switchTab(tab) {
@@ -649,8 +696,8 @@
 
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-1.5">
-                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${priorityColors[item.priority]}">${item.priority}</span>
-                        <span class="text-[10px] text-slate-500 font-medium">${item.type}</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${priorityColors[item.priority] || 'bg-slate-100'}">${item.priority || 'Média'}</span>
+                        <span class="text-[10px] text-slate-500 font-medium">${item.type || 'Geral'}</span>
                     </div>
                     <h4 class="text-xs font-bold text-slate-800 group-hover:text-sankhya-600 transition leading-tight mb-2">${item.title}</h4>
                     <div class="text-[10px] text-slate-500 flex items-center space-x-1 mb-2">
@@ -659,7 +706,7 @@
                     </div>
                     <div class="flex justify-between items-center text-[10px] text-slate-500 border-t border-slate-100 pt-2 mt-1">
                         <div class="flex items-center gap-2">
-                            <span>Horas: <strong class="text-sankhya-600">${item.hoursReal}h</strong>/${item.hoursEst}h</span>
+                            <span>Horas: <strong class="text-sankhya-600">${item.hoursReal || 0}h</strong>/${item.hoursEst || 0}h</span>
                             ${commsCount > 0 ? `<span class="flex items-center gap-0.5 text-slate-400"><i data-lucide="message-square" class="w-2.5 h-2.5"></i>${commsCount}</span>` : ''}
                             ${attachCount > 0 ? `<span class="flex items-center gap-0.5 text-slate-400"><i data-lucide="paperclip" class="w-2.5 h-2.5"></i>${attachCount}</span>` : ''}
                         </div>
@@ -674,7 +721,7 @@
             lucide.createIcons();
         }
 
-        // GERENCIADOR DE COMENTÁRIOS
+        // COMENTÁRIOS
         function renderComments() {
             const list = document.getElementById('commentsList');
             list.innerHTML = '';
@@ -702,7 +749,7 @@
             renderComments();
         }
 
-        // UPLOAD E ABERTURA DE ANEXOS
+        // ANEXOS
         function uploadAttachment() {
             const fileInput = document.getElementById('fileInput');
             if(!fileInput.files || fileInput.files.length === 0) {
@@ -712,7 +759,7 @@
             const file = fileInput.files[0];
             
             if (file.size > 3 * 1024 * 1024) {
-                alert("Escolha arquivos de até 3MB para garantir a performance do banco local.");
+                alert("Escolha arquivos de até 3MB.");
                 return;
             }
 
@@ -787,7 +834,7 @@
             renderAttachments();
         }
 
-        // RENDER DASHBOARD
+        // DASHBOARD
         function renderDashboard() {
             const total = demands.length;
             const hEst = demands.reduce((acc, d) => acc + (parseFloat(d.hoursEst) || 0), 0);
@@ -837,7 +884,7 @@
             });
         }
 
-        // RENDER DOCS
+        // DOCS
         function renderDocs() {
             const container = document.getElementById('docsList');
             container.innerHTML = '';
@@ -1042,7 +1089,7 @@
             webAppUrl = document.getElementById('webAppUrl').value.trim();
             localStorage.setItem('skh_webapp_url', webAppUrl);
             updateConnectionBanner();
-            loadDataFromGoogleSheets(); // Força a busca assim que salva a URL
+            loadDataFromGoogleSheets();
             closeConfigModal();
         }
 
@@ -1053,24 +1100,12 @@
                 banner.innerHTML = `
                     <div class="flex items-center space-x-2 text-xs">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                        <span>Sincronizado com o Google Sheets!</span>
+                        <span>Conectado e sincronizado com o Google Sheets!</span>
                     </div>
-                    <button onclick="openConfigModal()" class="underline text-emerald-900 hover:text-black font-semibold">Alterar URL</button>
+                    <button onclick="forceSyncData()" class="underline text-emerald-900 hover:text-black font-semibold">Atualizar Agora</button>
                 `;
             }
             lucide.createIcons();
-        }
-
-        function syncWithGoogleSheets(data) {
-            if(!webAppUrl) return;
-            fetch(webAppUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(() => console.log('Sincronizado com Google Sheets!'))
-            .catch(err => console.error('Erro ao sincronizar:', err));
         }
     </script>
 </body>
